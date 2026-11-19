@@ -1,0 +1,65 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}\usepackage[utf8]{inputenc}
+\usepackage{amsmath,amssymb,geometry,fancyhdr,enumitem}
+\geometry{margin=2.2cm}\setlength{\parindent}{0pt}\setlength{\parskip}{7pt}\emergencystretch=3em
+\pagestyle{fancy}\fancyhf{}\lhead{CSE202 -- Mock midterm 2}\rhead{120 minutes}\cfoot{\thepage}
+\newcommand{\q}[2]{\paragraph{Question #1 (#2 points).}}
+\begin{document}
+\begin{center}{\large\bfseries CSE202 -- Design and Analysis of Algorithms}\\[4pt]{\LARGE\bfseries Mock Midterm 2}\\[5pt]Two independent problems \quad $\cdot$ \quad 120 minutes \quad $\cdot$ \quad 20 points\end{center}
+\textbf{Guidelines.} Complete \texttt{inversions.py} and \texttt{balls.py}. Run the corresponding test files with Python 3. Write the requested short explanations as comments in the skeletons. Public tests are useful but do not prove correctness or complexity. Use only the Python standard library. Do not modify input lists. Unless stated otherwise, assume arithmetic and list indexing take constant time. A reasonable allocation is 60 minutes per problem.
+\section*{Problem 1 -- Comparing rankings \hfill /10}
+Let $A=[a_0,\ldots,a_{n-1}]$ be a list of integers. An \emph{inversion} is a pair of indices $(i,j)$ such that $0\le i<j<n$ and $a_i>a_j$. Equal values do not form an inversion. The number of inversions measures how far a list is from being sorted.
+
+For example, in $A=[4,1,3,1]$ the inversions are $(0,1),(0,2),(0,3),(2,3)$, so the answer is $4$. The empty list and any sorted list have zero inversions.
+\q{1}{1} Complete \texttt{is\_inversion(A,i,j)}, where both indices are valid. Return \texttt{True} exactly when $(i,j)$ is an inversion and \texttt{False} otherwise. Take $O(1)$ time.
+\q{2}{2} Complete \texttt{count\_naive(A)}. Return the number of inversions of $A$ using a double loop, in $O(n^2)$ time and $O(1)$ auxiliary space.
+\newpage
+\subsection*{Counting while merging}
+Let $L$ and $R$ be two lists sorted in nondecreasing order. Regard them as the left and right halves of the original list. A \emph{cross inversion} is a pair $(x,y)$ of positions with $x$ in $L$ and $y$ in $R$ whose values satisfy $L[x]>R[y]$. We count positions, so repeated values may contribute several different pairs.
+
+We can merge the two sorted lists while counting these pairs. Keep a pointer into each list. When the current left value is less than or equal to the current right value, append the left value. Otherwise append the right value: it is strictly smaller than every unprocessed value in $L$. Count all those remaining left positions at once. Append the remaining entries once either list is exhausted.
+
+\textbf{Example.} For $L=[1,3,5]$ and $R=[2,3,4]$, the merged list is $[1,2,3,3,4,5]$ and there are four cross inversions: $(3,2)$, $(5,2)$, $(5,3)$ and $(5,4)$. Here each pair denotes values rather than indices.
+\q{3}{3} Complete \texttt{merge\_count(L,R)}. Return the tuple \texttt{(M,c)} where \texttt{M} is a new sorted list containing all entries of $L$ and $R$, and \texttt{c} is the number of cross inversions. Inputs may be empty and may contain repeated values. The time must be $O(|L|+|R|)$; use indices rather than repeatedly deleting the first entry. In a comment, explain why adding the number of unprocessed left entries when taking a smaller right entry counts exactly the relevant inversions.
+\newpage
+\subsection*{Divide and conquer}
+For a list $A$ of length at least two, split it into two nearly equal parts $A_L$ and $A_R$. Every inversion is either entirely inside $A_L$, entirely inside $A_R$, or crosses the split. After recursively sorting each part, a single call to \texttt{merge\_count} supplies the cross count.
+\q{4}{2} Complete \texttt{sort\_count(A)}. Return \texttt{(S,c)}, where $S$ is a new sorted list containing the entries of $A$, and $c$ is the number of inversions in the original $A$. Use the recursive approach above, with empty and singleton lists as base cases. Aim for $O(n\log n)$ time. In a comment, state the time recurrence and justify the bound.
+
+\subsection*{Distance between two rankings}
+Two rankings are represented by lists $A$ and $B$ of the same $n$ distinct, hashable items. Both contain exactly the same items, each appearing once. A pair of items \emph{disagrees} if one ranking places the first item before the second while the other ranking places it after the second.
+
+For instance, $A=[a,b,c,d]$ and $B=[b,d,a,c]$ disagree on $(a,b)$, $(a,d)$ and $(c,d)$, giving distance $3$. Let $P$ be the list of positions in $B$ of the successive items of $A$: here $P=[2,0,3,1]$. The distance is the number of inversions in $P$.
+\q{5}{2} Complete \texttt{distance(A,B)}. Return the number of disagreeing pairs in $O(n\log n)$ expected time, assuming Python dictionary operations take expected $O(1)$ time. Build the position list and use \texttt{sort\_count}. Both lists may be empty. Do not modify them.
+\newpage
+\section*{Problem 2 -- Balls and empty boxes \hfill /10}
+We throw $n\ge0$ balls independently into $m\ge1$ labelled boxes. Each ball chooses each box with probability $1/m$. The \emph{load} of a box is the number of balls it contains. We investigate how many boxes remain empty.
+
+We use \texttt{rng.randrange(m)} to choose an integer uniformly in $\{0,\ldots,m-1\}$; calls are independent. Each function using randomness receives an optional \texttt{rng} argument, defaulting to Python's \texttt{random} module. Always draw through that argument so tests can control the outcomes.
+\q{1}{1} Complete \texttt{throw\_one(m,rng=random)}. Return the index of a uniformly chosen box, using exactly one call to \texttt{rng.randrange(m)}.
+\q{2}{2} Complete \texttt{simulate(n,m,rng=random)}. Return a new list of length $m$ whose entry at index $j$ is the number of balls thrown into box $j$. Process balls one by one, calling \texttt{throw\_one} once per ball. Aim for $O(n+m)$ time and $O(m)$ auxiliary space.
+
+\textbf{Example.} With $m=4$ and the five successive draws $0,2,2,1,2$, the loads are $[1,1,3,0]$; box $3$ is empty. If $n=0$ and $m=3$, the loads are $[0,0,0]$.
+\q{3}{1} Complete \texttt{empty\_boxes(loads)}. Return the number of zero entries in the supplied list, in linear time. The input list may be empty; in this case return $0$.
+\newpage
+\subsection*{Expected number of empty boxes}
+For each box $j$, define an indicator random variable $X_j$ equal to $1$ if the box is empty after all throws and $0$ otherwise. The total number of empty boxes is $X=X_0+\cdots+X_{m-1}$. The expected value of an indicator is the probability of its event; expectation is linear even when the indicators are not independent.
+
+For one specified box, each ball avoids it with probability $1-1/m$. The throws are independent. Hence
+\[
+\mathbb{E}[X] = m\left(1-\frac{1}{m}\right)^n.
+\]
+Use the convention $a^0=1$, including $0^0=1$, so that zero balls leave all boxes empty. In Python, \texttt{**} denotes exponentiation.
+\q{4}{3} Complete \texttt{expected\_empty(n,m)} using the formula above. Return the expected number as a number. In a comment, explain why a specified box is empty with probability $(1-1/m)^n$ and why multiplying by $m$ gives the expectation. You do not need to assume that emptiness events of different boxes are independent.
+
+\textbf{Example.} For $n=2$ and $m=2$, the expected number of empty boxes is $2(1/2)^2=1/2$. For $m=1$ it is $1$ when $n=0$, and $0$ when $n>0$.
+\newpage
+\subsection*{Experimentally estimating the expectation}
+We can estimate $\mathbb{E}[X]$ through independent experiments. In each experiment, throw a fresh set of $n$ balls into $m$ initially empty boxes and count the empty boxes. Average these counts over \texttt{trials} experiments. This is a random estimate; it need not equal the exact expectation in any particular run.
+
+For example, when $n=2$, $m=3$ and there are three trials, suppose the respective draws are $(0,0)$, $(0,1)$ and $(1,2)$. The numbers of empty boxes are $2,1,1$, so the returned average is $4/3$.
+\q{5}{3} Complete \texttt{estimate\_empty(n,m,trials,rng=random)}, where \texttt{trials} is a positive integer. For each trial call \texttt{simulate} with the same \texttt{rng}, then call \texttt{empty\_boxes}; return the arithmetic average of the resulting counts. Discard each trial's load list before proceeding. In a comment, justify the $O(\texttt{trials}\cdot(n+m))$ time and $O(m)$ auxiliary-space bounds. Assume each random draw takes constant time.
+
+\vspace{1cm}\hrule\vspace{5pt}
+\textbf{Reminder.} Save both completed Python files and include the requested explanations in comments. Tests use predetermined draws and do not check every case or the asymptotic bounds.
+\end{document}

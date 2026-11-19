@@ -1,0 +1,21 @@
+MIDTERM BLANC CSE202 / CSC_2F002_EP
+Durée conseillée : 2 heures pour les deux parties ; 20 points au total.
+
+Partie I : inversions.pdf + inversions.py + test_inversions.py (10 points).
+Partie II : majority.pdf + majority.py + test_majority.py (10 points).
+
+Lis les deux sujets, puis complète les fonctions des fichiers .py. Les réponses
+aux questions de justification vont dans les commentaires Q5 de chaque fichier.
+Place les fichiers d'une même partie dans le même dossier et lance :
+
+    python3 test_inversions.py
+    python3 test_majority.py
+
+Tu peux lancer une seule classe de tests, par exemple :
+
+    python3 -m unittest test_inversions.TestQ3 -v
+
+Les tests sont des exemples : ils ne prouvent pas les complexités, la probabilité
+ou la correction générale et ne notent pas les justifications. Les fonctions
+incomplètes ne passent pas les tests : c'est normal avant de commencer. Les
+fichiers .tex sont les sources LaTeX des deux sujets. Aucun corrigé n'est inclus.

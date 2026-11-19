@@ -1,0 +1,74 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,amssymb,geometry,fancyhdr,enumitem,booktabs}
+\geometry{margin=2.25cm}
+\setlength{\parindent}{0pt}\setlength{\parskip}{6pt}
+\pagestyle{fancy}\fancyhf{}\lhead{CSE202 -- Mock midterm}\rhead{120 minutes}\cfoot{\thepage}
+\newcommand{\q}[2]{\paragraph{Question #1 (#2 points).}}
+\begin{document}
+\begin{center}{\large\bfseries CSE202 -- Design and Analysis of Algorithms}\\[3pt]{\LARGE\bfseries Mock Midterm}\\[4pt]Two independent problems \quad $\cdot$ \quad 120 minutes \quad $\cdot$ \quad 20 points\end{center}
+\textbf{Guidelines.} Complete \texttt{segments.py} and \texttt{reservoir.py}; run the corresponding \texttt{test\_segments.py} and \texttt{test\_reservoir.py} using Python 3. Write the requested short justifications in comments in the skeleton. Public tests do not check all inputs or the required complexity. Use the Python standard library only. Do not modify the input lists. Unless specified otherwise, list access and arithmetic take constant time. Suggested allocation: about 60 minutes per problem.
+\section*{Problem 1 -- Maximum-sum segment \hfill /10}
+For a nonempty list $A=[a_0,\ldots,a_{n-1}]$ of integers, a \emph{segment} is a nonempty contiguous slice $A[i:j]$, where $0\le i<j\le n$. Its sum is $\sum_{t=i}^{j-1}a_t$. We seek the largest segment sum, not the segment itself. The empty segment is never allowed: for $[-4,-1,-3]$ the answer is $-1$.
+
+For instance, if $A=[2,-3,4,-1,2,-5]$, the segment $[4,-1,2]$ has sum $5$, which is optimal.
+\q{1}{1} Complete \texttt{interval\_sum(A,i,j)}. It returns the sum of $A[i:j]$ in $O(j-i)$ time, including $0$ if $i=j$. The input satisfies $0\le i\le j\le n$.
+\q{2}{2} Complete \texttt{best\_naive(A)} for nonempty $A$. Return the largest sum of any nonempty segment in $O(n^2)$ time. \emph{Hint:} for each starting index, extend the segment one entry at a time and maintain its sum.
+\newpage
+\subsection*{Dividing and crossing}
+Let $0\le \texttt{lo}<\texttt{mid}<\texttt{hi}\le n$. A segment $A[i:j]$ \emph{crosses} \texttt{mid} when $i<\texttt{mid}<j$: it contains at least one entry on each side. Such a segment is the concatenation of a suffix of $A[\texttt{lo}:\texttt{mid}]$ and a prefix of $A[\texttt{mid}:\texttt{hi}]$, both nonempty.
+\[
+\underbrace{\boxed{\;\cdots\;\;2\quad -3\quad 4\;}}_{\text{left part}}
+\quad\Big|\quad
+\underbrace{\boxed{\;-1\quad 2\quad -5\;\;\cdots\;}}_{\text{right part}}
+\qquad \text{best crossing sum} = 4+(-1+2)=5.
+\]
+\q{3}{3} Complete \texttt{best\_crossing(A,lo,mid,hi)}. Return the maximum sum of a segment of $A[\texttt{lo}:\texttt{hi}]$ crossing \texttt{mid}. The indices always satisfy the conditions above. Run in $O(\texttt{hi}-\texttt{lo})$ time and $O(1)$ auxiliary space. Be careful when all entries are negative.
+\q{4}{2} Complete \texttt{best\_dac(A)} using divide and conquer. Split each range of length at least two into two nearly equal nonempty parts. The answer is the maximum among the best segment in the left part, the best segment in the right part, and the best crossing segment. Handle a single entry as a base case. Aim for $O(n\log n)$ time. In a comment, give the recurrence for the running time and justify the bound. You may use a nested helper with indices.
+\newpage
+\subsection*{A linear-time summary}
+For a nonempty list $A$, define its summary as a tuple $(t,p,s,b)$:
+\begin{itemize}[nosep]
+\item $t$: the sum of all its entries;
+\item $p$: the maximum sum of a nonempty prefix;
+\item $s$: the maximum sum of a nonempty suffix;
+\item $b$: the maximum sum of any nonempty segment.
+\end{itemize}
+For example, the summary of $[2,-3,4]$ is $(3,3,4,4)$. If $A=L+R$ with both parts nonempty and summaries $(t_L,p_L,s_L,b_L)$ and $(t_R,p_R,s_R,b_R)$, the combined summary is
+\[
+\bigl(t_L+t_R,\quad \max(p_L,t_L+p_R),\quad
+\max(s_R,t_R+s_L),\quad \max(b_L,b_R,s_L+p_R)\bigr).
+\]
+\q{5}{2} Complete \texttt{summary(A)} for nonempty $A$ in $O(n)$ time. You may fold the above rule from left to right, starting from the summary $(a_0,a_0,a_0,a_0)$ of the first entry. In a comment, explain why the last component of the formula is correct and why your algorithm takes linear time.
+\newpage
+\section*{Problem 2 -- Sampling a stream \hfill /10}
+Suppose a list $L=[x_0,\ldots,x_{n-1}]$ arrives one element at a time. We want to choose a small sample without storing a second copy of the whole list. Positions are distinct even if their values are equal: in $[7,7,9]$ the two occurrences of $7$ are separate positions.
+
+We use \texttt{rng.randrange(t)} to draw an integer uniformly from $\{0,\ldots,t-1\}$, independently on each call. Each function receives an optional \texttt{rng} argument, defaulting to Python's \texttt{random} module. Always use that argument for random draws, so the tests can control them. Do not call \texttt{random.sample}, shuffle or sort the input. The result is random; tests use prescribed draws.
+\q{1}{1} Complete \texttt{choose\_index(n,rng=random)}, for $n\ge1$. Return a uniformly chosen integer in $\{0,\ldots,n-1\}$ using one call to \texttt{rng.randrange(n)}.
+\q{2}{2} Complete \texttt{sample\_one(L,rng=random)} for nonempty $L$. Start with $x_0$ as the candidate. For each $i=1,\ldots,n-1$, draw uniformly from $\{0,\ldots,i\}$ and replace the candidate by $x_i$ exactly when the draw is $0$. Return the final candidate. Use one pass and $O(1)$ auxiliary space. In a comment, show that each position has probability $1/n$ of being chosen.
+
+\textbf{Example.} On $[a,b,c,d]$, if the successive draws are $0,1,0$, the candidate changes from $a$ to $b$, stays $b$, then changes to $d$.
+\q{3}{1} Complete \texttt{init\_reservoir(L,k)}, where $0\le k\le n$. Return a new list containing the first $k$ entries of $L$, in their original order. The returned list must be independent of $L$.
+\newpage
+\subsection*{A sample of $k$ positions}
+We now maintain a reservoir $R$ of $k$ entries. Initially, it contains $x_0,\ldots,x_{k-1}$. For each later position $i=k,\ldots,n-1$:
+\begin{enumerate}[nosep]
+\item Draw $j$ uniformly from $\{0,\ldots,i\}$.
+\item If $j<k$, replace $R[j]$ by $x_i$; otherwise leave $R$ unchanged.
+\end{enumerate}
+For $k=0$, return an empty list without making random draws. For $k=n$, return a copy of $L$. The order of entries in the reservoir is the order of its slots, not necessarily their order in $L$.
+
+\textbf{Example.} For $L=[a,b,c,d,e]$, $k=2$ and draws $1,3,0$, the successive reservoirs are $[a,b]$, $[a,c]$, $[a,c]$, $[e,c]$.
+\q{4}{4} Complete \texttt{reservoir\_sample(L,k,rng=random)}, with $0\le k\le n$, exactly following the procedure above. Use $O(n)$ time and $O(k)$ auxiliary space. In comments, justify the time and space bounds and show by induction that, after processing $i+1$ entries, each processed position has probability $k/(i+1)$ of being in the reservoir (for $i+1\ge k>0$). You may assume the random draws are independent.
+
+In fact, a stronger statement holds: every set of $k$ distinct positions is equally likely to be the final sample. You may use this fact in the next question without proving it.
+\newpage
+\subsection*{Estimating an average}
+Assume now that the entries of $L$ are real numbers and $1\le k\le n$. The sample average is the sum of the $k$ entries in the reservoir divided by $k$. Since every position has the same inclusion probability $k/n$, the expected sample average equals the average of the entire list. Repeated values are counted with their multiplicity.
+\q{5}{2} Complete \texttt{estimate\_mean(L,k,rng=random)}. It must call \texttt{reservoir\_sample} with the same \texttt{rng} and return the sample average as a number. It should use $O(n)$ time and $O(k)$ auxiliary space. For instance, if the resulting reservoir is $[50,30]$, the result is $40$.
+
+\vspace{1cm}\hrule\vspace{5pt}
+\textbf{Reminder.} Write your answers in the two Python files, including the requested comments. The test files are a starting point: passing them is not a proof of correctness, uniformity, or complexity.
+\end{document}

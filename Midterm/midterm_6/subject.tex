@@ -1,0 +1,80 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}\usepackage[utf8]{inputenc}\usepackage{amsmath,amssymb,geometry,fancyhdr,array,booktabs}
+\geometry{margin=2.15cm}\setlength{\parindent}{0pt}\setlength{\parskip}{7pt}\emergencystretch=4em
+\pagestyle{fancy}\fancyhf{}\lhead{CSE202 -- Practice midterm}\rhead{120 minutes}\cfoot{\thepage}
+\newcommand{\q}[2]{\paragraph{Question #1 (#2 points).}}
+\begin{document}
+\begin{center}{\large\bfseries CSE202 -- Design and Analysis of Algorithms}\\[4pt]{\LARGE\bfseries Practice Midterm}\\[5pt]Two independent problems \quad $\cdot$ \quad 120 minutes \quad $\cdot$ \quad 20 points\end{center}
+\textbf{Guidelines.} Complete \texttt{image\_tree.py} and \texttt{matrix\_check.py}. Run the corresponding test files with Python 3. Write short answers to the two analysis questions in comments in the provided files. Use the standard library only and do not mutate the inputs. Public tests are examples: passing them does not establish correctness. Unless stated otherwise, assume integer arithmetic and list access take constant time. Each problem is worth 10 points; you may allocate about one hour to each.
+\section*{Problem 1 -- Compressing a binary image \hfill /10}
+A black-and-white image is an $n\times n$ matrix of pixels, where $0$ means white and $1$ means black. We assume $n$ is a positive power of two. The pixel in row $r$ and column $c$ is \texttt{image[r][c]}; rows increase from top to bottom and columns from left to right.
+
+When a square block is entirely white or entirely black, we can store just its color instead of all its pixels. Otherwise we split it into four equal square quadrants and repeat the process. This produces a \emph{quadtree}:
+\begin{itemize}\item A leaf is the integer $0$ or $1$, indicating a uniform square block of that color.
+\item An internal node is a 4-tuple \texttt{(NW, NE, SW, SE)} of trees, in the order top-left, top-right, bottom-left, bottom-right.
+\end{itemize}
+The tree must be \emph{canonical}: encode every uniform block as a single leaf, even if it has side length greater than one. For example:
+\[
+\begin{array}{c|cccc}
+ &c=0&1&2&3\\\hline
+r=0&0&0&1&1\\
+1&0&0&1&1\\
+2&1&0&1&1\\
+3&0&0&1&1
+\end{array}
+\qquad\longrightarrow\qquad
+\underbrace{(0,\;1,\;(1,0,0,0),\;1)}_{\text{NW, NE, SW, SE}}.
+\]
+The southwest quadrant is not uniform and splits into four single-pixel leaves. The other three quadrants are uniform. The image contains nine black pixels.
+\newpage
+\subsection*{Building the compressed representation}
+A block is described by the row and column of its top-left corner and its side length. For example, in the picture above, the southwest block starts at $(2,0)$ and has side length $2$. All blocks passed to your functions are completely inside the image.
+\q{1}{2} Complete \texttt{uniform\_block(image,row,col,size)}. Return $0$ if all pixels in the specified block are $0$, $1$ if they are all $1$, and \texttt{None} otherwise. A block of side $s$ must take $O(s^2)$ time in the worst case and $O(1)$ auxiliary space.
+\q{2}{3} Complete \texttt{encode(image)}. Return its canonical quadtree using the recursive construction described on page 1. For a uniform block return a leaf; otherwise recursively encode its four quadrants in NW, NE, SW, SE order and return a tuple. The image is a nonempty square with side length a power of two. You may write a helper taking the coordinates and size of a block. Use \texttt{uniform\_block} to detect a uniform block. No separate complexity proof is required.
+
+\textbf{Additional examples.} A $1\times1$ image \texttt{[[1]]} is encoded as \texttt{1}. The $2\times2$ image \texttt{[[0,1],[1,0]]} is encoded as \texttt{(0,1,1,0)}. A $4\times4$ image entirely filled with ones is encoded as \texttt{1}, not as \texttt{(1,1,1,1)}.
+\subsection*{Reading without decompression}
+The same leaf can describe a block of any size. Therefore, operations on a tree also receive the side length of the block represented by its root. We assume the input tree is valid and canonical for that size. For an internal node of a block of side $s$, each child represents a square of side $s/2$.
+\newpage
+\q{3}{2} Complete \texttt{pixel(tree,size,row,col)}. Return the pixel at the given coordinates without reconstructing the image. The coordinates are relative to the top-left corner of the root block, and are always valid. At an internal node, select the appropriate quadrant and update coordinates to be relative to that child. At a leaf, return its color. In a short comment, explain why at most $\log_2(\texttt{size})$ internal nodes are visited.
+
+For example, \texttt{pixel((0,1,(1,0,0,0),1),4,2,0)} returns \texttt{1}: first select the southwest child, then its northwest child. The coordinates for the second step are $(0,0)$ relative to the southwest quadrant.
+\q{4}{1} Complete \texttt{black\_pixels(tree,size)}. Return the total number of black pixels in the represented block without constructing the image. A black leaf representing a square of side $s$ contributes $s^2$; a white leaf contributes zero. For an internal node, add the counts of its children. The time should be linear in the number of tree nodes.
+\q{5}{2} Complete \texttt{decode(tree,size)}. Return the represented image as a list of \texttt{size} row lists, each containing \texttt{size} integers. You may allocate an image initialized with zeros and write a recursive helper that fills the region represented by a black leaf. Different rows must be independent lists. In particular, changing one cell of the returned image must not change a cell in another row. The input tree must not be modified.
+
+\textbf{Note.} The public tests also check that \texttt{decode(encode(image), n)} reproduces several images. They do not verify every possible image.
+\newpage
+\section*{Problem 2 -- Checking a matrix product \hfill /10}
+Suppose someone gives us three $n\times n$ matrices $A,B,C$ of integers and claims that $AB=C$. Computing the full product in the usual way takes $O(n^3)$ arithmetic operations. In this problem we use a random vector to check the claim in $O(n^2)$ time per trial.
+
+All matrices are nonempty, square, and represented as lists of row lists. A vector is a list of $n$ integers. We use ordinary integer arithmetic: there is no reduction modulo 2. For a matrix $A$ and vector $v$,
+\[
+(Av)_i=\sum_{j=0}^{n-1} A_{ij}v_j.
+\]
+If $AB=C$, then for \emph{every} vector $v$ we have $A(Bv)=Cv$. Therefore, if we ever find a vector for which these two vectors differ, the claim is definitely false. If they agree on one vector, the claim may nevertheless be false.
+
+\textbf{Example.} Let $A=B=I_2$ and $C=\begin{pmatrix}2&0\\0&1\end{pmatrix}$. The claim is false. With $v=(0,1)$ the two computed vectors agree; with $v=(1,0)$ they differ. In particular, testing only the zero vector would never detect an error.
+\q{1}{2} Complete \texttt{mat\_vec(A,v)}. Return the list representing $Av$ using $O(n^2)$ time. Do not modify the matrix or vector.
+\q{2}{1} Complete \texttt{random\_vector(n,rng=random)}. Return a list of $n$ independent uniformly random bits. Generate each bit with exactly one call to \texttt{rng.randrange(2)}. Always use the supplied \texttt{rng}: tests use it to supply predictable draws.
+\newpage
+\subsection*{One randomized trial}
+Choose a vector $v$ uniformly from $\{0,1\}^n$; equivalently, choose each bit independently with probability $1/2$. Compute $Bv$, then $A(Bv)$, and separately compute $Cv$. Compare the two resulting lists.
+\q{3}{2} Complete \texttt{check\_vector(A,B,C,v)}. Return \texttt{True} if $A(Bv)=Cv$ and \texttt{False} otherwise. Call \texttt{mat\_vec} for each of the three matrix-vector products. Do not compute the full matrix product $AB$; the time must be $O(n^2)$.
+\q{4}{2} Complete \texttt{check\_once(A,B,C,rng=random)}. Generate one random binary vector using \texttt{random\_vector} with the supplied \texttt{rng}, and return the result of \texttt{check\_vector} on that vector. A return value of \texttt{False} certifies that $AB\ne C$. A return value of \texttt{True} means only that this particular trial did not find a discrepancy.
+
+\textbf{Probability fact.} You may use the following result without proving it: if $AB\ne C$ and $v$ is uniformly random in $\{0,1\}^n$, then
+\[
+\Pr[A(Bv)=Cv]\le \tfrac12.
+\]
+The bound need not be an equality. If $AB=C$, the test accepts with probability $1$.
+\newpage
+\subsection*{Repeating the test}
+To reduce the chance of accepting a wrong product, perform several independent trials. Stop as soon as a trial rejects. If all trials accept, return \texttt{True}. Each trial must draw a \emph{fresh} independent random vector, including after a previous trial has accepted.
+\q{5}{3} Complete \texttt{check\_repeated(A,B,C,rounds,rng=random)}, where \texttt{rounds} is a positive integer. Call \texttt{check\_once} with the supplied \texttt{rng} for each trial. Return \texttt{False} immediately on the first rejection and \texttt{True} if every trial accepts. The worst-case running time should be $O(\texttt{rounds}\cdot n^2)$.
+
+In a short comment, use the stated probability fact and independence to explain why, if $AB\ne C$, the probability of accepting all \texttt{rounds} trials is at most $2^{-\texttt{rounds}}$. No long proof is expected.
+
+\textbf{Example.} If a wrong product passes the first trial but fails the second, the function returns \texttt{False} immediately and does not generate vectors for any remaining trials. If the product is correct, it always returns \texttt{True}.
+
+\vspace{1cm}\hrule\vspace{5pt}\textbf{Reminder.} Submit the two completed Python files, including the two requested short comments. You may use the supplied tests throughout the exam.
+\end{document}
